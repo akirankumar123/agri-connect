@@ -185,7 +185,7 @@ export const triggerWeatherAlarm = async (
   severity: 'light' | 'moderate' | 'heavy',
   settings: AlarmSettings,
   userPhone?: string
-): Promise<void> => {
+): Promise<any> => {
   console.group('🚨 Weather Alarm Triggered');
   console.log('Reason:', reason);
   console.log('Severity:', severity);
@@ -208,14 +208,16 @@ export const triggerWeatherAlarm = async (
   // Send SMS if enabled and phone number available
   if (settings.smsEnabled && userPhone) {
     try {
-      await sendWeatherAlertSMS(userPhone, reason, severity);
-      console.log('📱 Weather alert SMS sent to:', userPhone);
+      const smsResult = await sendWeatherAlertSMS(userPhone, reason, severity);
+      console.log('📱 Weather alert SMS sent to:', userPhone, smsResult);
+      return smsResult;
     } catch (error) {
       console.error('Failed to send weather alert SMS:', error);
     }
   } else if (settings.smsEnabled && !userPhone) {
     console.warn('SMS enabled but no phone number available for weather alert');
   }
+  return null;
 };
 
 /**

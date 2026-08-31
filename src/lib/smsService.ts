@@ -30,8 +30,43 @@ class SMSService {
     }
 
     async sendSMS(to: string, message: string, alertId?: string): Promise<SMSMessage> {
-        // Simulate SMS sending delay
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        // Try to send via backend first (if available)
+        try {
+            const res = await fetch('/api/send-sms', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ to, message })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                const smsMessage: SMSMessage = {
+                    id: `sms_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                    to,
+                    message,
+                    timestamp: new Date(),
+                    status: data && data.success ? 'delivered' : 'failed',
+                    alertId: data && data.sid ? String(data.sid) : alertId
+                };
+
+                this.messages.unshift(smsMessage);
+                this.saveMessages();
+
+                console.log(`📱 SMS ${smsMessage.status.toUpperCase()}: (via backend)`, {
+                    to: smsMessage.to,
+                    message: smsMessage.message,
+                    timestamp: smsMessage.timestamp.toLocaleString(),
+                    meta: data
+                });
+
+                return smsMessage;
+            }
+        } catch (error) {
+            console.warn('Backend SMS send failed, falling back to local simulation:', error);
+        }
+
+        // Fallback simulation when backend unavailable or failed
+        await new Promise(resolve => setTimeout(resolve, 800));
 
         const smsMessage: SMSMessage = {
             id: `sms_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -45,7 +80,7 @@ class SMSService {
         this.messages.unshift(smsMessage);
         this.saveMessages();
 
-        console.log(`📱 SMS ${smsMessage.status.toUpperCase()}:`, {
+        console.log(`📱 SMS ${smsMessage.status.toUpperCase()}: (simulated)`, {
             to: smsMessage.to,
             message: smsMessage.message,
             timestamp: smsMessage.timestamp.toLocaleString()

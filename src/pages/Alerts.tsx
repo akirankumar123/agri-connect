@@ -58,7 +58,14 @@ const Alerts: React.FC = () => {
     useEffect(() => {
         if (user?.id) {
             const userPrefs = getAlertPreferences(user.id);
-            setPreferences(userPrefs);
+            // If user hasn't set a phone in preferences, default to their account phone
+            if ((!userPrefs.phoneNumber || userPrefs.phoneNumber === '') && user.phone) {
+                const merged = { ...userPrefs, phoneNumber: user.phone };
+                setPreferences(merged);
+                saveAlertPreferences(user.id, merged);
+            } else {
+                setPreferences(userPrefs);
+            }
 
             const userAlarmSettings = getAlarmSettings(user.id);
             setAlarmSettings(userAlarmSettings);
@@ -82,12 +89,24 @@ const Alerts: React.FC = () => {
             // Check if alarm should be triggered
             if (user?.id) {
                 const alarmCheck = shouldTriggerAlarm(weather, alarmSettings);
-                if (alarmCheck.trigger) {
+                    if (alarmCheck.trigger) {
                     setAlarmActive(true);
                     setAlarmReason(alarmCheck.reason);
 
                     // Trigger alarm sound and notification
-                    await triggerWeatherAlarm(alarmCheck.reason, alarmCheck.severity, alarmSettings, user?.phone);
+                        const smsResult = await triggerWeatherAlarm(alarmCheck.reason, alarmCheck.severity, alarmSettings, user?.phone);
+
+                        // If SMS was enabled, show feedback to user
+                        if (alarmSettings.smsEnabled) {
+                            const targetPhone = preferences.phoneNumber || user?.phone;
+                            if (smsResult) {
+                                showToast({ type: 'success', title: 'SMS Sent', message: `Weather alert SMS sent to ${targetPhone}`, duration: 4000 });
+                            } else {
+                                showToast({ type: 'error', title: 'SMS Failed', message: `Failed to send SMS to ${targetPhone}`, duration: 5000 });
+                            }
+                            // Refresh SMS history
+                            loadSMSMessages();
+                        }
 
                     // Log the alarm
                     logAlarmActivity('triggered', {
@@ -117,9 +136,12 @@ const Alerts: React.FC = () => {
     };
 
     const loadSMSMessages = () => {
-        if (user && preferences.phoneNumber) {
-            const messages = smsService.getMessages(preferences.phoneNumber);
-            setSmsMessages(messages);
+        if (user) {
+            const phone = preferences.phoneNumber || user.phone;
+            if (phone) {
+                const messages = smsService.getMessages(phone);
+                setSmsMessages(messages);
+            }
         }
     };
 
