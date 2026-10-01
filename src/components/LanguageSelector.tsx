@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Languages } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import type { LanguageCode } from '@/lib/translations';
 
 const LanguageSelector: React.FC = () => {
     const { currentLanguage, setLanguage, availableLanguages, t } = useLanguage();
@@ -17,7 +18,12 @@ const LanguageSelector: React.FC = () => {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="flex items-center space-x-2">
+                <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center space-x-2"
+                    aria-label={t('language')}
+                >
                     <Languages className="h-4 w-4" />
                     <span className="hidden sm:inline">{currentLang?.flag}</span>
                     <span className="hidden md:inline">{currentLang?.name}</span>
@@ -27,7 +33,7 @@ const LanguageSelector: React.FC = () => {
                 {availableLanguages.map((language) => (
                     <DropdownMenuItem
                         key={language.code}
-                        onClick={() => setLanguage(language.code as any)}
+                        onClick={() => setLanguage(language.code as LanguageCode)}
                         className={`flex items-center space-x-2 cursor-pointer ${currentLanguage === language.code ? 'bg-accent' : ''
                             }`}
                     >

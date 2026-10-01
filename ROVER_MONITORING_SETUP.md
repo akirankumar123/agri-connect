@@ -53,6 +53,24 @@ export REACT_APP_GOOGLE_MAPS_API_KEY=YOUR_API_KEY
 npm run dev
 ```
 
+### Connect Arduino Sensor Values over USB
+
+The Rover Monitor reads live sensor data from the Arduino through the Python WebSocket bridge. The bridge defaults to `COM7` and accepts the labeled format:
+
+```text
+Soil Moisture Value: 1019 | Temperature: 31.60 C | Humidity: 68.00 % | Distance: 346.45 cm
+```
+
+On Windows, keep the frontend and bridge running in separate terminals from the project folder:
+
+1. Close the Arduino IDE Serial Monitor. Only one program can read the Arduino's USB serial port at a time.
+2. Install the Python dependencies once: `py -m pip install pyserial websockets`.
+3. Start the bridge: `py rover-backend/server.py`.
+4. Start the frontend in another terminal: `npm run dev -- --port 5173`.
+5. Open the Rover Monitoring page in the browser. The status changes to Live when the browser connects to the bridge.
+
+If Windows assigns a different port, set it before starting the bridge in PowerShell, for example `$env:ROVER_COM_PORT = "COM6"`. The soil reading is displayed as a raw ADC value; converting it to a percentage requires calibrating the soil sensor.
+
 ### 4. Update RoverMonitoring Component
 
 In `src/pages/RoverMonitoring.tsx`, update the Google Maps API key line:
@@ -128,7 +146,7 @@ Real-time sensor data displayed includes:
 
 - All sensor readings update automatically during operation
 - Battery decreases with rover movement (0.5% per move)
-- Sensor data is simulated for demonstration (can be replaced with real sensor integration)
+- Sensor readings are streamed from the Arduino over USB when the Python bridge is running; approximate values appear while it is offline
 - Historical route is maintained and displayed
 
 ### Route Management

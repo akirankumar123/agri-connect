@@ -5,9 +5,9 @@ import RoverMap from '../components/RoverMap';
 
 const RoverMonitoring: React.FC = () => {
   return (
-    <div>
+    <div style={{ margin: 0, padding: 0 }}>
       <Header />
-      <main>
+      <main style={{ margin: 0, padding: 0 }}>
         <RoverMap />
       </main>
 

@@ -17,35 +17,35 @@ const Header: React.FC = () => {
   };
 
   return (
-    <header className="bg-white shadow-sm border-b">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+    <header className="bg-white shadow-sm border-b w-full">
+      <div className="w-full px-2 sm:px-4 lg:px-6">
+        <div className="flex flex-wrap items-center justify-between gap-2 py-3">
           {/* Logo */}
-          <div className="flex items-center space-x-2">
-            <Leaf className="h-8 w-8 text-green-600" />
+          <div className="flex items-center space-x-2 shrink-0">
+            <Leaf className="h-7 w-7 text-green-600" />
             <span className="text-xl font-bold text-gray-800">AgriAssist</span>
           </div>
 
           {/* Language Selector */}
-          <div className="flex items-center mr-4">
+          <div className="flex items-center shrink-0">
             <LanguageSelector />
           </div>
 
           {/* Navigation */}
-          <nav className="flex items-center space-x-4">
+          <nav className="flex flex-wrap items-center justify-start gap-2 w-full lg:w-auto">
             {isAuthenticated ? (
               <>
                 {/* User Info */}
-                <div className="flex items-center space-x-2 text-sm">
+                <div className="flex items-center space-x-2 text-sm shrink-0">
                   <User className="h-4 w-4 text-gray-600" />
-                  <span className="text-gray-700">Welcome, {user?.name}</span>
+                  <span className="text-gray-700">{t('welcomeUser')}, {user?.name}</span>
                 </div>
 
                 {/* Cart Button */}
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex items-center space-x-2"
+                  className="flex items-center gap-2 px-3 py-2 text-sm whitespace-nowrap"
                   onClick={() => navigate('/')}
                 >
                   <ShoppingCart className="h-4 w-4" />
@@ -56,7 +56,7 @@ const Header: React.FC = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex items-center space-x-2"
+                  className="flex items-center gap-2 px-3 py-2 text-sm whitespace-nowrap"
                   onClick={() => navigate('/alerts')}
                 >
                   <Bell className="h-4 w-4" />
@@ -67,7 +67,7 @@ const Header: React.FC = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex items-center space-x-2"
+                  className="flex items-center gap-2 px-3 py-2 text-sm whitespace-nowrap"
                   onClick={() => navigate('/scanner')}
                 >
                   <Camera className="h-4 w-4" />
@@ -78,7 +78,7 @@ const Header: React.FC = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex items-center space-x-2"
+                  className="flex items-center gap-2 px-3 py-2 text-sm whitespace-nowrap"
                   onClick={() => navigate('/crop-guide')}
                 >
                   <BookOpen className="h-4 w-4" />
@@ -89,77 +89,77 @@ const Header: React.FC = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex items-center space-x-2"
+                  className="flex items-center gap-2 px-3 py-2 text-sm whitespace-nowrap"
                   onClick={() => navigate('/rover-monitoring')}
                 >
                   <Leaf className="h-4 w-4" />
-                  <span>Rover Monitor</span>
+                  <span>{t('roverMonitor')}</span>
                 </Button>
 
                 {/* Post Job Button */}
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex items-center space-x-2"
+                  className="flex items-center gap-2 px-3 py-2 text-sm whitespace-nowrap"
                   onClick={() => navigate('/post-job')}
                 >
                   <Users className="h-4 w-4" />
-                  <span>Post Job</span>
+                  <span>{t('postJob')}</span>
                 </Button>
 
                 {/* My Profile Button */}
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex items-center space-x-2"
+                  className="flex items-center gap-2 px-3 py-2 text-sm whitespace-nowrap"
                   onClick={() => navigate('/farmer-profile')}
                 >
                   <User className="h-4 w-4" />
-                  <span>My Profile</span>
+                  <span>{t('myProfile')}</span>
                 </Button>
 
                 {/* Find Jobs Button */}
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex items-center space-x-2"
+                  className="flex items-center gap-2 px-3 py-2 text-sm whitespace-nowrap"
                   onClick={() => navigate('/labour-marketplace')}
                 >
                   <Briefcase className="h-4 w-4" />
-                  <span>Find Jobs</span>
+                  <span>{t('findJobs')}</span>
                 </Button>
 
                 {/* View Matches Button */}
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex items-center space-x-2"
+                  className="flex items-center gap-2 px-3 py-2 text-sm whitespace-nowrap"
                   onClick={() => navigate('/job-matches')}
                 >
                   <TrendingUp className="h-4 w-4" />
-                  <span>View Matches</span>
+                  <span>{t('viewMatches')}</span>
                 </Button>
 
                 {/* Local Labour Button */}
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex items-center space-x-2"
+                  className="flex items-center gap-2 px-3 py-2 text-sm whitespace-nowrap"
                   onClick={() => navigate('/local-labour')}
                 >
                   <Users className="h-4 w-4" />
-                  <span>Local Labor</span>
+                  <span>{t('localLabor')}</span>
                 </Button>
 
                 {/* Marketplace Button */}
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex items-center space-x-2"
+                  className="flex items-center gap-2 px-3 py-2 text-sm whitespace-nowrap"
                   onClick={() => navigate('/marketplace')}
                 >
                   <ShoppingCart className="h-4 w-4" />
-                  <span>Marketplace</span>
+                  <span>{t('marketplace')}</span>
                 </Button>
 
                 {/* Logout Button */}
@@ -167,7 +167,7 @@ const Header: React.FC = () => {
                   variant="outline"
                   size="sm"
                   onClick={handleLogout}
-                  className="flex items-center space-x-2"
+                  className="flex items-center gap-2 px-3 py-2 text-sm whitespace-nowrap"
                 >
                   <LogOut className="h-4 w-4" />
                   <span>{t('logout')}</span>
@@ -180,7 +180,7 @@ const Header: React.FC = () => {
                   variant="outline"
                   size="sm"
                   onClick={() => navigate('/login')}
-                  className="flex items-center space-x-2"
+                  className="flex items-center gap-2 px-3 py-2 text-sm whitespace-nowrap"
                 >
                   <User className="h-4 w-4" />
                   <span>{t('login')}</span>
@@ -190,9 +190,9 @@ const Header: React.FC = () => {
                 <Button
                   size="sm"
                   onClick={() => navigate('/login')}
-                  className="bg-green-600 hover:bg-green-700 flex items-center space-x-2"
+                  className="bg-green-600 hover:bg-green-700 flex items-center gap-2 px-3 py-2 text-sm whitespace-nowrap"
                 >
-                  <span>Get Started</span>
+                  <span>{t('getStarted')}</span>
                 </Button>
               </>
             )}

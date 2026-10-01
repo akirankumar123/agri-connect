@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
+import { useLanguage } from "@/contexts/LanguageContext";
+import type { LanguageCode } from "@/lib/translations";
 import {
   Sprout,
   Mail,
@@ -14,38 +16,38 @@ import {
 } from "lucide-react";
 
 const Footer = () => {
+  const { t, currentLanguage, setLanguage, availableLanguages } = useLanguage();
+
   const quickLinks = [
-    { name: "Dashboard", href: "#dashboard" },
-    { name: "Labour Hiring", href: "#labour" },
-    { name: "Crop Management", href: "#crops" },
-    { name: "Weather Forecast", href: "#weather" },
-    { name: "Rover Monitoring", href: "/rover-monitoring" },
-    { name: "Marketplace", href: "#marketplace" },
-    { name: "Knowledge Hub", href: "/knowledge-hub" }
-  ];
+    { key: "footerDashboard", href: "#dashboard" },
+    { key: "footerLaborHiring", href: "#labour" },
+    { key: "footerCropManagement", href: "#crops" },
+    { key: "footerWeatherForecast", href: "#weather" },
+    { key: "roverMonitor", href: "/rover-monitoring" },
+    { key: "marketplace", href: "#marketplace" },
+    { key: "footerKnowledgeHub", href: "/knowledge-hub" }
+  ] as const;
 
   const supportLinks = [
-    { name: "Help Center", href: "#help" },
-    { name: "Contact Us", href: "#contact" },
-    { name: "Community Forum", href: "#forum" },
-    { name: "Video Tutorials", href: "#tutorials" },
-    { name: "FAQ", href: "#faq" },
-    { name: "Technical Support", href: "#support" }
-  ];
+    { key: "footerHelpCenter", href: "#help" },
+    { key: "footerContactUs", href: "#contact" },
+    { key: "footerCommunity", href: "#forum" },
+    { key: "footerVideoTutorials", href: "#tutorials" },
+    { key: "footerFaq", href: "#faq" },
+    { key: "footerTechnicalSupport", href: "#support" }
+  ] as const;
 
   const legalLinks = [
-    { name: "Privacy Policy", href: "#privacy" },
-    { name: "Terms of Service", href: "#terms" },
-    { name: "Data Security", href: "#security" },
-    { name: "Cookie Policy", href: "#cookies" }
-  ];
+    { key: "footerPrivacyPolicy", href: "#privacy" },
+    { key: "footerTerms", href: "#terms" },
+    { key: "footerDataSecurity", href: "#security" },
+    { key: "footerCookiePolicy", href: "#cookies" }
+  ] as const;
 
   return (
     <footer className="bg-card border-t border-border">
       <div className="container mx-auto px-4 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-
-          {/* Company Info */}
           <div className="space-y-6">
             <div className="flex items-center space-x-2">
               <div className="p-2 bg-primary rounded-lg">
@@ -53,13 +55,12 @@ const Footer = () => {
               </div>
               <div>
                 <h3 className="text-xl font-bold text-foreground">Agri-Rover</h3>
-                <p className="text-sm text-muted-foreground">Agri-Rover Platform</p>
+                <p className="text-sm text-muted-foreground">{t('companyInfo')}</p>
               </div>
             </div>
 
             <p className="text-muted-foreground leading-relaxed">
-              Empowering farmers with modern technology for better productivity,
-              direct market access, and sustainable farming practices.
+              {t('platformDescription')}
             </p>
 
             <div className="space-y-3">
@@ -77,42 +78,34 @@ const Footer = () => {
               </div>
             </div>
 
-            {/* Social Links */}
             <div className="flex space-x-3">
-              <Button variant="outline" size="sm" className="p-2">
+              <Button variant="outline" size="sm" className="p-2" aria-label={t('footerFacebook')}>
                 <Facebook className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="sm" className="p-2">
+              <Button variant="outline" size="sm" className="p-2" aria-label={t('footerTwitter')}>
                 <Twitter className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="sm" className="p-2">
+              <Button variant="outline" size="sm" className="p-2" aria-label={t('footerInstagram')}>
                 <Instagram className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="sm" className="p-2">
+              <Button variant="outline" size="sm" className="p-2" aria-label={t('footerYoutube')}>
                 <Youtube className="h-4 w-4" />
               </Button>
             </div>
           </div>
 
-          {/* Quick Links */}
           <div>
-            <h4 className="font-semibold text-foreground mb-6">Platform</h4>
+            <h4 className="font-semibold text-foreground mb-6">{t('platform')}</h4>
             <ul className="space-y-3">
               {quickLinks.map((link) => (
-                <li key={link.name}>
-                  {link.name === "Knowledge Hub" ? (
-                    <Link
-                      to={link.href}
-                      className="text-muted-foreground hover:text-primary transition-colors duration-200"
-                    >
-                      {link.name}
+                <li key={link.key}>
+                  {link.key === "footerKnowledgeHub" ? (
+                    <Link to={link.href} className="text-muted-foreground hover:text-primary transition-colors duration-200">
+                      {t(link.key)}
                     </Link>
                   ) : (
-                    <a
-                      href={link.href}
-                      className="text-muted-foreground hover:text-primary transition-colors duration-200"
-                    >
-                      {link.name}
+                    <a href={link.href} className="text-muted-foreground hover:text-primary transition-colors duration-200">
+                      {t(link.key)}
                     </a>
                   )}
                 </li>
@@ -120,56 +113,48 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Support Links */}
           <div>
-            <h4 className="font-semibold text-foreground mb-6">Support</h4>
+            <h4 className="font-semibold text-foreground mb-6">{t('support')}</h4>
             <ul className="space-y-3">
               {supportLinks.map((link) => (
-                <li key={link.name}>
-                  <a
-                    href={link.href}
-                    className="text-muted-foreground hover:text-primary transition-colors duration-200"
-                  >
-                    {link.name}
+                <li key={link.key}>
+                  <a href={link.href} className="text-muted-foreground hover:text-primary transition-colors duration-200">
+                    {t(link.key)}
                   </a>
                 </li>
               ))}
             </ul>
           </div>
 
-          {/* Newsletter */}
           <div>
-            <h4 className="font-semibold text-foreground mb-6">Stay Updated</h4>
+            <h4 className="font-semibold text-foreground mb-6">{t('stayUpdated')}</h4>
             <p className="text-muted-foreground mb-4 text-sm">
-              Get the latest farming tips, weather alerts, and market updates directly in your inbox.
+              {t('footerNewsletterDescription')}
             </p>
 
             <div className="space-y-3">
               <div className="flex space-x-2">
                 <Input
-                  placeholder="Enter your email"
+                  placeholder={t('footerEmailPlaceholder')}
                   type="email"
                   className="flex-1"
                 />
-                <Button size="sm" className="px-3">
+                <Button size="sm" className="px-3" aria-label={t('footerSubscribe')}>
                   <Send className="h-4 w-4" />
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                We respect your privacy. Unsubscribe at any time.
+                {t('footerPrivacyNote')}
               </p>
             </div>
 
             <div className="mt-6">
-              <h5 className="font-medium text-foreground mb-3 text-sm">Legal</h5>
+              <h5 className="font-medium text-foreground mb-3 text-sm">{t('legal')}</h5>
               <ul className="space-y-2">
                 {legalLinks.map((link) => (
-                  <li key={link.name}>
-                    <a
-                      href={link.href}
-                      className="text-xs text-muted-foreground hover:text-primary transition-colors duration-200"
-                    >
-                      {link.name}
+                  <li key={link.key}>
+                    <a href={link.href} className="text-xs text-muted-foreground hover:text-primary transition-colors duration-200">
+                      {t(link.key)}
                     </a>
                   </li>
                 ))}
@@ -178,24 +163,26 @@ const Footer = () => {
           </div>
         </div>
 
-        {/* Bottom Bar */}
         <div className="border-t border-border mt-12 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <p className="text-sm text-muted-foreground text-center md:text-left">
-              © 2024 Agri-Rover. All rights reserved. Empowering farmers with technology.
+              © 2024 Agri-Rover. {t('footerAllRightsReserved')} {t('footerEmpoweringFarmers')}
             </p>
-            <div className="flex items-center space-x-6">
-              <span className="text-xs text-muted-foreground">Available in:</span>
-              <div className="flex space-x-3">
-                <Button variant="outline" size="sm" className="text-xs px-3 py-1">
-                  English
-                </Button>
-                <Button variant="outline" size="sm" className="text-xs px-3 py-1">
-                  हिंदी
-                </Button>
-                <Button variant="outline" size="sm" className="text-xs px-3 py-1">
-                  ਪੰਜਾਬੀ
-                </Button>
+            <div className="flex items-center flex-wrap justify-center gap-3">
+              <span className="text-xs text-muted-foreground">{t('footerAvailableIn')}</span>
+              <div className="flex flex-wrap justify-center gap-2">
+                {availableLanguages.map((language) => (
+                  <Button
+                    key={language.code}
+                    variant="outline"
+                    size="sm"
+                    className="text-xs px-3 py-1"
+                    aria-pressed={currentLanguage === language.code}
+                    onClick={() => setLanguage(language.code as LanguageCode)}
+                  >
+                    {language.name}
+                  </Button>
+                ))}
               </div>
             </div>
           </div>

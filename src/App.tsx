@@ -4,7 +4,7 @@ import { CartProvider } from "./contexts/CartContext";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { LanguageProvider } from "./contexts/LanguageContext";
 import { ToastProvider } from "./components/Toast";
-import DeveloperDebugPanel from "./components/DeveloperDebugPanel";
+import HelpAssistant from "./components/HelpAssistant";
 import Index from "./pages/Index";
 import Checkout from "./pages/Checkout";
 import OrderConfirmation from "./pages/OrderConfirmation";
@@ -51,7 +51,7 @@ function App() {
           <CartProvider>
             <RoverProvider>
               <Router>
-                <DeveloperDebugPanel />
+                <HelpAssistant />
                 <Routes>
                   <Route path="/login" element={<Login />} />
                   <Route path="/" element={<Index />} />

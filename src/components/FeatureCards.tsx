@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { useLanguage } from "@/contexts/LanguageContext";
 import {
   Users,
   Leaf,
@@ -16,20 +17,21 @@ import {
 
 const FeatureCards = () => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const features = [
     {
       icon: Users,
-      title: "Labour to farmers",
+      title: t('featureLabourTitle'),
       description: "Find and hire skilled farm workers quickly. Post job requirements, review profiles, and connect with available labours in your area.",
       color: "text-primary",
       bgColor: "bg-primary/10",
-      actionText: "Post Job",
+      actionText: t('postJob'),
       href: "/post-job"
     },
     {
       icon: Leaf,
-      title: "Crop & Pest Management",
+      title: t('featureCropTitle'),
       description: "Get AI-powered insights for crop cultivation, seasonal planning, and early pest detection. Scan plants for disease identification and get treatment recommendations.",
       color: "text-success",
       bgColor: "bg-success/10",
@@ -38,7 +40,7 @@ const FeatureCards = () => {
     },
     {
       icon: Cloud,
-      title: "Weather Forecast",
+      title: t('featureWeatherTitle'),
       description: "Access real-time, location-based weather data and forecasts. Plan your farming activities with confidence.",
       color: "text-blue-600",
       bgColor: "bg-blue-100",
@@ -47,16 +49,16 @@ const FeatureCards = () => {
     },
     {
       icon: ShoppingCart,
-      title: "Marketplace",
+      title: t('featureMarketplaceTitle'),
       description: "Connect directly with buyers and suppliers. List your produce, negotiate prices, and eliminate middlemen costs.",
       color: "text-warning",
       bgColor: "bg-warning/10",
-      actionText: "Visit Market",
+      actionText: t('marketplace'),
       href: "/marketplace"
     },
     {
       icon: BookOpen,
-      title: "Knowledge Hub",
+      title: t('featureKnowledgeTitle'),
       description: "Access comprehensive farming guides, video tutorials, and expert advice on sustainable agriculture practices.",
       color: "text-purple-600",
       bgColor: "bg-purple-100",
@@ -65,11 +67,11 @@ const FeatureCards = () => {
     },
     {
       icon: Bell,
-      title: "Smart Alerts",
+      title: t('featureAlertTitle'),
       description: "Receive timely notifications about weather warnings, pest outbreaks, government schemes, and market price updates.",
       color: "text-red-600",
       bgColor: "bg-red-100",
-      actionText: "View Alerts",
+      actionText: t('alerts'),
       href: "/alerts"
     }
   ];
@@ -80,10 +82,10 @@ const FeatureCards = () => {
         {/* Section Header */}
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Complete Farming Solutions
+            {t('completeFarmingSolutions')}
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Everything you need to modernize your farming operations and increase productivity
+            {t('completeFarmingDescription')}
           </p>
         </div>
 

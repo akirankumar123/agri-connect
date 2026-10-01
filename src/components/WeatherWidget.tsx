@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useLanguage } from "@/contexts/LanguageContext";
 import {
   Cloud,
   Sun,
@@ -20,6 +21,7 @@ const WeatherWidget = () => {
   const [currentWeather, setCurrentWeather] = useState<any>(null);
   const [forecast, setForecast] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const { t } = useLanguage();
 
   useEffect(() => {
     // Fetch current weather
@@ -107,17 +109,17 @@ const WeatherWidget = () => {
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg font-semibold flex items-center">
                   <MapPin className="h-4 w-4 mr-2 text-primary" />
-                  Current Weather
+                  {t('currentWeather')}
                 </CardTitle>
-                <Badge variant="outline" className="text-xs">Live</Badge>
+                <Badge variant="outline" className="text-xs">{t('live')}</Badge>
               </div>
               <p className="text-sm text-muted-foreground">
-                {loading ? "Loading..." : currentWeather?.location}
+                {loading ? t('loadingWeather') : currentWeather?.location}
               </p>
             </CardHeader>
             <CardContent>
               {loading ? (
-                <div className="text-center mb-6">Loading weather...</div>
+                <div className="text-center mb-6">{t('loadingWeather')}</div>
               ) : (
                 <div className="text-center mb-6">
                   <div className="flex items-center justify-center mb-2">
@@ -136,28 +138,28 @@ const WeatherWidget = () => {
                   <div className="flex items-center space-x-2">
                     <Droplets className="h-4 w-4 text-blue-500" />
                     <div>
-                      <p className="text-xs text-muted-foreground">Humidity</p>
+                      <p className="text-xs text-muted-foreground">{t('humidity')}</p>
                       <p className="font-semibold">{currentWeather.humidity}%</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Wind className="h-4 w-4 text-gray-500" />
                     <div>
-                      <p className="text-xs text-muted-foreground">Wind</p>
+                      <p className="text-xs text-muted-foreground">{t('wind')}</p>
                       <p className="font-semibold">{currentWeather.windSpeed} km/h</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Eye className="h-4 w-4 text-green-500" />
                     <div>
-                      <p className="text-xs text-muted-foreground">Visibility</p>
+                      <p className="text-xs text-muted-foreground">{t('visibility')}</p>
                       <p className="font-semibold">{currentWeather.visibility} km</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Sun className="h-4 w-4 text-yellow-500" />
                     <div>
-                      <p className="text-xs text-muted-foreground">UV Index</p>
+                      <p className="text-xs text-muted-foreground">{t('uvIndex')}</p>
                       <p className="font-semibold">{currentWeather.uvIndex}</p>
                     </div>
                   </div>
@@ -169,12 +171,12 @@ const WeatherWidget = () => {
           {/* 5-Day Forecast */}
           <Card className="lg:col-span-1 shadow-medium">
             <CardHeader>
-              <CardTitle className="text-lg font-semibold">5-Day Forecast</CardTitle>
+              <CardTitle className="text-lg font-semibold">{t('fiveDayForecast')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {forecast.length === 0 ? (
-                  <div>Loading forecast...</div>
+                  <div>{t('loadingForecast')}</div>
                 ) : (
                   forecast.map((day, index) => (
                     <div key={index} className="flex items-center justify-between py-2 border-b border-border last:border-b-0">
@@ -187,7 +189,7 @@ const WeatherWidget = () => {
                       </div>
                       <div className="text-right">
                         <p className="font-semibold text-foreground">{day.temp}</p>
-                        <p className="text-xs text-blue-500">{day.rain} rain</p>
+                        <p className="text-xs text-blue-500">{day.rain} {t('rain')}</p>
                       </div>
                     </div>
                   ))

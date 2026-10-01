@@ -1,6 +1,5 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, type CSSProperties } from "react";
 import {
-  Sprout,
   Thermometer,
   Droplets,
   ArrowUp,
@@ -10,7 +9,12 @@ import {
   Play,
   Square,
   Navigation,
+  Volume2,
 } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { useRover } from "@/contexts/RoverContext";
+import { languages, type LanguageCode } from "@/lib/translations";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // ---------------------------------------------------------------------------
 // This is a self-contained simulation so the UI is fully interactive on its
@@ -27,6 +31,195 @@ import {
 const MOVE_STEP = 2.2; // units per tick while a direction is held
 const TURN_STEP = 5; // degrees per tick while turning
 const TICK_MS = 80;
+
+const voiceGuideCopy: Record<LanguageCode, {
+  title: string;
+  description: string;
+  voiceLanguage: string;
+  readAll: string;
+  stop: string;
+  listen: string;
+  currentReading: string;
+  unsupported: string;
+  voiceUnavailable: string;
+  noReading: string;
+  offlineEstimated: string;
+  sensorNames: string[];
+  explanations: string[];
+}> = {
+  en: {
+    title: "Sensor voice guide",
+    description: "Listen to what each reading tells you about your field.",
+    voiceLanguage: "Voice language",
+    readAll: "Read all sensors",
+    stop: "Stop reading",
+    listen: "Listen",
+    currentReading: "Current reading:",
+    unsupported: "Voice playback is not available in this browser.",
+    voiceUnavailable: "No browser voice is available for this language. Try another voice language.",
+    noReading: "No reading",
+    offlineEstimated: "Offline estimate",
+    sensorNames: ["Soil sensor raw value", "Air temperature", "Air humidity", "Distance"],
+    explanations: [
+      "This is the raw analog value reported by the soil sensor. Its conversion to a moisture percentage depends on the sensor and its calibration.",
+      "This is the temperature of the air around the rover. Very hot or cold conditions can stress crops, so use it to plan watering and field work.",
+      "This measures moisture in the air around the rover and is reported as a percentage.",
+      "This is the distance reported by the rover's distance sensor. A missing reading means no distance value is currently available.",
+    ],
+  },
+  hi: {
+    title: "सेंसर की आवाज़ में जानकारी",
+    description: "सुनें कि खेत के बारे में हर रीडिंग क्या बताती है।",
+    voiceLanguage: "आवाज़ की भाषा",
+    readAll: "सभी सेंसर सुनें",
+    stop: "सुनना बंद करें",
+    listen: "सुनें",
+    currentReading: "अभी की रीडिंग:",
+    unsupported: "इस ब्राउज़र में आवाज़ चलाने की सुविधा उपलब्ध नहीं है।",
+    voiceUnavailable: "इस भाषा के लिए ब्राउज़र में आवाज़ उपलब्ध नहीं है। आवाज़ की दूसरी भाषा चुनें।",
+    noReading: "रीडिंग उपलब्ध नहीं",
+    offlineEstimated: "ऑफ़लाइन अनुमान",
+    sensorNames: ["मिट्टी सेंसर का कच्चा मान", "हवा का तापमान", "हवा की नमी", "दूरी"],
+    explanations: [
+      "यह मिट्टी सेंसर से मिला कच्चा एनालॉग मान है। इसे नमी के प्रतिशत में बदलने के लिए सेंसर के अनुसार कैलिब्रेशन चाहिए।",
+      "यह रोवर के आसपास की हवा का तापमान है। बहुत गर्मी या ठंड फसल को नुकसान पहुँचा सकती है। सिंचाई और खेत के काम की योजना में इसका उपयोग करें।",
+      "यह रोवर के आसपास की हवा में नमी का प्रतिशत मापता है।",
+      "यह रोवर के दूरी सेंसर का मान है। रीडिंग न मिलने का अर्थ है कि दूरी का मान अभी उपलब्ध नहीं है।",
+    ],
+  },
+  te: {
+    title: "సెన్సార్ వాయిస్ గైడ్",
+    description: "మీ పొలం గురించి ప్రతి కొలత ఏమి చెబుతుందో వినండి.",
+    voiceLanguage: "వాయిస్ భాష",
+    readAll: "అన్ని సెన్సార్లను వినండి",
+    stop: "వినడం ఆపండి",
+    listen: "వినండి",
+    currentReading: "ప్రస్తుత కొలత:",
+    unsupported: "ఈ బ్రౌజర్‌లో వాయిస్ ప్లేబ్యాక్ అందుబాటులో లేదు.",
+    voiceUnavailable: "ఈ భాషకు బ్రౌజర్ వాయిస్ అందుబాటులో లేదు. మరో వాయిస్ భాషను ఎంచుకోండి.",
+    noReading: "కొలత అందుబాటులో లేదు",
+    offlineEstimated: "ఆఫ్‌లైన్ అంచనా",
+    sensorNames: ["నేల సెన్సార్ ముడి విలువ", "గాలి ఉష్ణోగ్రత", "గాలి తేమ", "దూరం"],
+    explanations: [
+      "ఇది నేల సెన్సార్ ఇచ్చిన ముడి అనలాగ్ విలువ. తేమ శాతంగా మార్చడానికి సెన్సార్‌కు తగిన కాలిబ్రేషన్ అవసరం.",
+      "ఇది రోవర్ చుట్టూ ఉన్న గాలి ఉష్ణోగ్రత. అధిక వేడి లేదా చలి పంటపై ప్రభావం చూపవచ్చు. నీటి సరఫరా, పొలం పనులను ప్లాన్ చేయడానికి దీన్ని ఉపయోగించండి.",
+      "ఇది రోవర్ చుట్టూ ఉన్న గాలిలో తేమ శాతాన్ని కొలుస్తుంది.",
+      "ఇది రోవర్ దూర సెన్సార్ ఇచ్చిన విలువ. రీడింగ్ లేకపోతే దూర విలువ ప్రస్తుతం అందుబాటులో లేదు.",
+    ],
+  },
+  ta: {
+    title: "சென்சார் குரல் வழிகாட்டி",
+    description: "உங்கள் வயலைப் பற்றி ஒவ்வொரு அளவீடும் என்ன சொல்கிறது என்று கேளுங்கள்.",
+    voiceLanguage: "குரல் மொழி",
+    readAll: "அனைத்து சென்சார்களையும் கேளுங்கள்",
+    stop: "கேட்பதை நிறுத்து",
+    listen: "கேளுங்கள்",
+    currentReading: "தற்போதைய அளவு:",
+    unsupported: "இந்த உலாவியில் குரல் இயக்கம் கிடைக்கவில்லை.",
+    voiceUnavailable: "இந்த மொழிக்கான உலாவிக் குரல் கிடைக்கவில்லை. வேறு குரல் மொழியைத் தேர்ந்தெடுக்கவும்.",
+    noReading: "அளவீடு இல்லை",
+    offlineEstimated: "இணைப்பில்லா தோராய மதிப்பு",
+    sensorNames: ["மண் சென்சார் மூல மதிப்பு", "காற்று வெப்பநிலை", "காற்றின் ஈரப்பதம்", "தூரம்"],
+    explanations: [
+      "இது மண் சென்சார் வழங்கும் மூல அனலாக் மதிப்பு. ஈரப்பத சதவீதமாக மாற்ற சென்சாருக்கான அளவுத்திருத்தம் தேவை.",
+      "இது ரோவரைச் சுற்றியுள்ள காற்றின் வெப்பநிலை. அதிக வெப்பமோ குளிரோ பயிரைப் பாதிக்கலாம். நீர்ப்பாசனம் மற்றும் வயல் பணிகளைத் திட்டமிட இதைப் பயன்படுத்துங்கள்.",
+      "இது ரோவரைச் சுற்றியுள்ள காற்றின் ஈரப்பத சதவீதத்தை அளவிடுகிறது.",
+      "இது ரோவரின் தூர சென்சார் வழங்கும் மதிப்பு. அளவீடு இல்லையெனில் தூர மதிப்பு தற்போது கிடைக்கவில்லை.",
+    ],
+  },
+  kn: {
+    title: "ಸೆನ್ಸರ್ ಧ್ವನಿ ಮಾರ್ಗದರ್ಶಿ",
+    description: "ನಿಮ್ಮ ಹೊಲದ ಬಗ್ಗೆ ಪ್ರತಿ ಅಳತೆ ಏನು ಹೇಳುತ್ತದೆ ಎಂದು ಕೇಳಿ.",
+    voiceLanguage: "ಧ್ವನಿ ಭಾಷೆ",
+    readAll: "ಎಲ್ಲಾ ಸೆನ್ಸರ್‌ಗಳನ್ನು ಕೇಳಿ",
+    stop: "ಕೇಳುವುದನ್ನು ನಿಲ್ಲಿಸಿ",
+    listen: "ಕೇಳಿ",
+    currentReading: "ಪ್ರಸ್ತುತ ಅಳತೆ:",
+    unsupported: "ಈ ಬ್ರೌಸರ್‌ನಲ್ಲಿ ಧ್ವನಿ ಪ್ಲೇಬ್ಯಾಕ್ ಲಭ್ಯವಿಲ್ಲ.",
+    voiceUnavailable: "ಈ ಭಾಷೆಗೆ ಬ್ರೌಸರ್ ಧ್ವನಿ ಲಭ್ಯವಿಲ್ಲ. ಬೇರೆ ಧ್ವನಿ ಭಾಷೆಯನ್ನು ಆಯ್ಕೆಮಾಡಿ.",
+    noReading: "ಅಳತೆ ಲಭ್ಯವಿಲ್ಲ",
+    offlineEstimated: "ಆಫ್‌ಲೈನ್ ಅಂದಾಜು",
+    sensorNames: ["ಮಣ್ಣಿನ ಸೆನ್ಸರ್‌ನ ಮೂಲ ಮೌಲ್ಯ", "ಗಾಳಿಯ ತಾಪಮಾನ", "ಗಾಳಿಯ ತೇವಾಂಶ", "ದೂರ"],
+    explanations: [
+      "ಇದು ಮಣ್ಣಿನ ಸೆನ್ಸರ್ ನೀಡುವ ಮೂಲ ಅನಲಾಗ್ ಮೌಲ್ಯ. ತೇವಾಂಶದ ಶೇಕಡಾವಾರು ಪಡೆಯಲು ಸೆನ್ಸರ್‌ಗೆ ತಕ್ಕ ಮಾಪನಾಂಕ ನಿರ್ಣಯ ಬೇಕು.",
+      "ಇದು ರೋವರ್ ಸುತ್ತಲಿನ ಗಾಳಿಯ ತಾಪಮಾನ. ಹೆಚ್ಚು ಬಿಸಿ ಅಥವಾ ಚಳಿ ಬೆಳೆಗೆ ಒತ್ತಡ ಉಂಟುಮಾಡಬಹುದು. ನೀರಾವರಿ ಮತ್ತು ಹೊಲದ ಕೆಲಸವನ್ನು ಯೋಜಿಸಲು ಇದನ್ನು ಬಳಸಿ.",
+      "ಇದು ರೋವರ್ ಸುತ್ತಲಿನ ಗಾಳಿಯ ತೇವಾಂಶದ ಶೇಕಡಾವಾರನ್ನು ಅಳೆಯುತ್ತದೆ.",
+      "ಇದು ರೋವರ್‌ನ ದೂರ ಸೆನ್ಸರ್ ನೀಡುವ ಮೌಲ್ಯ. ಅಳತೆ ಇಲ್ಲದಿದ್ದರೆ ದೂರದ ಮೌಲ್ಯ ಈಗ ಲಭ್ಯವಿಲ್ಲ.",
+    ],
+  },
+};
+
+const speechLocales: Record<LanguageCode, string> = {
+  en: "en-IN",
+  hi: "hi-IN",
+  te: "te-IN",
+  ta: "ta-IN",
+  kn: "kn-IN",
+};
+
+const spokenUnits: Record<LanguageCode, { raw: string; percent: string; celsius: string; centimeters: string }> = {
+  en: { raw: "raw sensor value", percent: "percent", celsius: "degrees Celsius", centimeters: "centimeters" },
+  hi: { raw: "कच्चा सेंसर मान", percent: "प्रतिशत", celsius: "डिग्री सेल्सियस", centimeters: "सेंटीमीटर" },
+  te: { raw: "ముడి సెన్సార్ విలువ", percent: "శాతం", celsius: "డిగ్రీల సెల్సియస్", centimeters: "సెంటీమీటర్లు" },
+  ta: { raw: "சென்சார் மூல மதிப்பு", percent: "சதவீதம்", celsius: "டிகிரி செல்சியஸ்", centimeters: "சென்டிமீட்டர்கள்" },
+  kn: { raw: "ಸೆನ್ಸರ್ ಮೂಲ ಮೌಲ್ಯ", percent: "ಶೇಕಡಾ", celsius: "ಡಿಗ್ರಿ ಸೆಲ್ಸಿಯಸ್", centimeters: "ಸೆಂಟಿಮೀಟರ್" },
+};
+
+const roverPageCopy: Record<LanguageCode, {
+  title: string;
+  subtitle: string;
+  live: string;
+  connecting: string;
+  offline: string;
+  noReading: string;
+  sensorLabels: string[];
+  landView: string;
+  holdingPosition: string;
+  roverStopped: string;
+  plotArea: string;
+  controls: string;
+  controlsHelp: string;
+  roverStarted: string;
+  start: string;
+  stop: string;
+  commands: Record<string, string>;
+}> = {
+  en: {
+    title: "Rover Monitor", subtitle: "field unit", live: "Live", connecting: "Connecting", offline: "Offline - estimated", noReading: "No reading",
+    sensorLabels: ["Soil sensor (raw)", "Ambient temp", "Air humidity", "Distance"],
+    landView: "Land view — live position", holdingPosition: "Holding position", roverStopped: "Rover stopped", plotArea: "plot ~2 acres",
+    controls: "Controls", controlsHelp: "Press and hold, or use arrow keys", roverStarted: "Rover started", start: "Start", stop: "Stop",
+    commands: { fwd: "Forward", rev: "Reverse", left: "Turning left", right: "Turning right" },
+  },
+  hi: {
+    title: "रोवर मॉनिटर", subtitle: "खेत की इकाई", live: "लाइव", connecting: "कनेक्ट हो रहा है", offline: "ऑफ़लाइन - अनुमानित", noReading: "रीडिंग उपलब्ध नहीं",
+    sensorLabels: ["मिट्टी सेंसर (कच्चा मान)", "हवा का तापमान", "हवा की नमी", "दूरी"],
+    landView: "खेत का दृश्य — वर्तमान स्थिति", holdingPosition: "एक ही जगह पर", roverStopped: "रोवर रुका हुआ है", plotArea: "खेत ~2 एकड़",
+    controls: "नियंत्रण", controlsHelp: "दबाकर रखें या तीर वाली कुंजियों का उपयोग करें", roverStarted: "रोवर चालू है", start: "शुरू करें", stop: "रोकें",
+    commands: { fwd: "आगे", rev: "पीछे", left: "बाएँ मुड़ रहा है", right: "दाएँ मुड़ रहा है" },
+  },
+  te: {
+    title: "రోవర్ మానిటర్", subtitle: "పొలం యూనిట్", live: "ప్రత్యక్షం", connecting: "కనెక్ట్ అవుతోంది", offline: "ఆఫ్‌లైన్ - అంచనా", noReading: "కొలత అందుబాటులో లేదు",
+    sensorLabels: ["నేల సెన్సార్ (ముడి విలువ)", "గాలి ఉష్ణోగ్రత", "గాలి తేమ", "దూరం"],
+    landView: "పొలం దృశ్యం — ప్రస్తుత స్థానం", holdingPosition: "ఒకే చోట ఉంది", roverStopped: "రోవర్ ఆగి ఉంది", plotArea: "పొలం ~2 ఎకరాలు",
+    controls: "నియంత్రణలు", controlsHelp: "నొక్కి పట్టుకోండి లేదా బాణం కీలను ఉపయోగించండి", roverStarted: "రోవర్ ప్రారంభమైంది", start: "ప్రారంభించు", stop: "ఆపు",
+    commands: { fwd: "ముందుకు", rev: "వెనక్కి", left: "ఎడమవైపు తిరుగుతోంది", right: "కుడివైపు తిరుగుతోంది" },
+  },
+  ta: {
+    title: "ரோவர் கண்காணிப்பு", subtitle: "வயல் அலகு", live: "நேரலை", connecting: "இணைக்கிறது", offline: "இணைப்பில் இல்லை - தோராயம்", noReading: "அளவீடு இல்லை",
+    sensorLabels: ["மண் சென்சார் (மூல மதிப்பு)", "காற்று வெப்பநிலை", "காற்றின் ஈரப்பதம்", "தூரம்"],
+    landView: "வயல் காட்சி — தற்போதைய நிலை", holdingPosition: "ஒரே இடத்தில் உள்ளது", roverStopped: "ரோவர் நிறுத்தப்பட்டது", plotArea: "வயல் ~2 ஏக்கர்",
+    controls: "கட்டுப்பாடுகள்", controlsHelp: "அழுத்திப் பிடிக்கவும் அல்லது அம்புக்குறி விசைகளைப் பயன்படுத்தவும்", roverStarted: "ரோவர் தொடங்கியது", start: "தொடங்கு", stop: "நிறுத்து",
+    commands: { fwd: "முன்னோக்கி", rev: "பின்னோக்கி", left: "இடப்புறம் திரும்புகிறது", right: "வலப்புறம் திரும்புகிறது" },
+  },
+  kn: {
+    title: "ರೋವರ್ ಮಾನಿಟರ್", subtitle: "ಹೊಲದ ಘಟಕ", live: "ನೇರಪ್ರಸಾರ", connecting: "ಸಂಪರ್ಕಿಸಲಾಗುತ್ತಿದೆ", offline: "ಆಫ್‌ಲೈನ್ - ಅಂದಾಜು", noReading: "ಅಳತೆ ಲಭ್ಯವಿಲ್ಲ",
+    sensorLabels: ["ಮಣ್ಣಿನ ಸೆನ್ಸರ್ (ಮೂಲ ಮೌಲ್ಯ)", "ಗಾಳಿಯ ತಾಪಮಾನ", "ಗಾಳಿಯ ತೇವಾಂಶ", "ದೂರ"],
+    landView: "ಹೊಲದ ನೋಟ — ಪ್ರಸ್ತುತ ಸ್ಥಾನ", holdingPosition: "ಒಂದೇ ಸ್ಥಳದಲ್ಲಿದೆ", roverStopped: "ರೋವರ್ ನಿಂತಿದೆ", plotArea: "ಹೊಲ ~2 ಎಕರೆ",
+    controls: "ನಿಯಂತ್ರಣಗಳು", controlsHelp: "ಒತ್ತಿಹಿಡಿಯಿರಿ ಅಥವಾ ಬಾಣದ ಕೀಲಿಗಳನ್ನು ಬಳಸಿ", roverStarted: "ರೋವರ್ ಪ್ರಾರಂಭವಾಗಿದೆ", start: "ಪ್ರಾರಂಭಿಸಿ", stop: "ನಿಲ್ಲಿಸಿ",
+    commands: { fwd: "ಮುಂದಕ್ಕೆ", rev: "ಹಿಂದಕ್ಕೆ", left: "ಎಡಕ್ಕೆ ತಿರುಗುತ್ತಿದೆ", right: "ಬಲಕ್ಕೆ ತಿರುಗುತ್ತಿದೆ" },
+  },
+};
 
 // Field is modeled as a bounded ~90m x 90m plot (8,100 m² ≈ 2 acres),
 // centered on the rover's starting point. Swap BASE_LAT/BASE_LNG for the
@@ -51,31 +244,6 @@ function formatCoord(v, posLabel, negLabel) {
 
 function clamp(v, lo, hi) {
   return Math.max(lo, Math.min(hi, v));
-}
-
-function useSensors(posRef) {
-  const [soil, setSoil] = useState({ moisture: 34, ph: 6.6, conductivity: 1.2 });
-  const [temp, setTemp] = useState({ ambient: 24.8, ground: 19.3 });
-
-  useEffect(() => {
-    const id = setInterval(() => {
-      // soil readings drift slowly and shift a little with position, so
-      // moving across "terrain" feels like it changes what's underfoot
-      const patch = Math.sin(posRef.current.x / 18) + Math.cos(posRef.current.y / 22);
-      setSoil((s) => ({
-        moisture: clamp(s.moisture + (Math.random() - 0.5) * 0.8 + patch * 0.15, 8, 92),
-        ph: clamp(s.ph + (Math.random() - 0.5) * 0.03, 4.5, 8.5),
-        conductivity: clamp(s.conductivity + (Math.random() - 0.5) * 0.03, 0.2, 3.5),
-      }));
-      setTemp((t) => ({
-        ambient: clamp(t.ambient + (Math.random() - 0.5) * 0.15, -10, 45),
-        ground: clamp(t.ground + (Math.random() - 0.5) * 0.12, -10, 45),
-      }));
-    }, 1400);
-    return () => clearInterval(id);
-  }, [posRef]);
-
-  return { soil, temp };
 }
 
 function StatCard({ icon: Icon, label, value, unit, accent }) {
@@ -171,7 +339,7 @@ function CtrlButton({ onDown, onUp, children, disabled }) {
   );
 }
 
-function StartStopButton({ running, onToggle }) {
+function StartStopButton({ running, onToggle, copy }) {
   return (
     <button
       onClick={onToggle}
@@ -195,12 +363,26 @@ function StartStopButton({ running, onToggle }) {
       }}
     >
       {running ? <Square size={14} /> : <Play size={14} />}
-      {running ? "Stop" : "Start"}
+      {running ? copy.stop : copy.start}
     </button>
   );
 }
 
 export default function RoverMonitor() {
+  const { currentLanguage } = useLanguage();
+  const [speakingSensor, setSpeakingSensor] = useState<number | "all" | null>(null);
+  const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [voiceLanguage, setVoiceLanguage] = useState<LanguageCode>(currentLanguage);
+  const voiceLanguageManuallyChanged = useRef(false);
+  const pageCopy = roverPageCopy[currentLanguage];
+  const { rover, sensorConnection } = useRover();
+  const { soilMoisture, temperature, humidity, distance } = rover.monitoringData;
+  const [approximateSensors, setApproximateSensors] = useState({
+    soilMoisture: 650,
+    temperature: 24.8,
+    humidity: 55,
+    distance: 60,
+  });
   const posRef = useRef({ x: 0, y: 0, heading: 0 });
   const [pose, setPose] = useState({ x: 0, y: 0, heading: 0 });
   const [trail, setTrail] = useState([{ x: 0, y: 0 }]);
@@ -209,7 +391,86 @@ export default function RoverMonitor() {
   const runningRef = useRef(false);
   const [running, setRunning] = useState(false);
 
-  const { soil, temp } = useSensors(posRef);
+  const voiceGuide = voiceGuideCopy[currentLanguage];
+  const spokenGuide = voiceGuideCopy[voiceLanguage];
+  const isApproximate = sensorConnection !== "connected";
+  const displayedSoilMoisture = isApproximate ? approximateSensors.soilMoisture : soilMoisture;
+  const displayedTemperature = isApproximate ? approximateSensors.temperature : temperature;
+  const displayedHumidity = isApproximate ? approximateSensors.humidity : humidity;
+  const displayedDistance = isApproximate ? approximateSensors.distance : distance;
+  const locale = speechLocales[voiceLanguage];
+  const languageVoice = availableVoices.find((voice) => voice.lang.toLowerCase() === locale.toLowerCase())
+    ?? availableVoices.find((voice) => voice.lang.toLowerCase().startsWith(locale.slice(0, 2)));
+  const units = spokenUnits[voiceLanguage];
+  const estimatePrefix = isApproximate ? "~" : "";
+  const moistureReading = displayedSoilMoisture === null ? pageCopy.noReading : `${estimatePrefix}${displayedSoilMoisture.toFixed(0)}`;
+  const ambientReading = displayedTemperature === null ? pageCopy.noReading : `${estimatePrefix}${displayedTemperature.toFixed(1)}`;
+  const humidityReading = displayedHumidity === null ? pageCopy.noReading : `${estimatePrefix}${displayedHumidity.toFixed(1)}`;
+  const distanceReading = displayedDistance === null || (!isApproximate && displayedDistance < 0)
+    ? pageCopy.noReading
+    : `${estimatePrefix}${displayedDistance.toFixed(1)}`;
+  const sensorValues = [
+    moistureReading,
+    `${ambientReading} °C`,
+    `${humidityReading} %`,
+    distanceReading === pageCopy.noReading ? distanceReading : `${distanceReading} cm`,
+  ];
+  const spokenReadings = [
+    displayedSoilMoisture === null ? spokenGuide.noReading : `${moistureReading} ${units.raw}`,
+    displayedTemperature === null ? spokenGuide.noReading : `${ambientReading} ${units.celsius}`,
+    displayedHumidity === null ? spokenGuide.noReading : `${humidityReading} ${units.percent}`,
+    distanceReading === pageCopy.noReading ? spokenGuide.noReading : `${distanceReading} ${units.centimeters}`,
+  ];
+  const sensorSpeech = spokenGuide.explanations.map((explanation, index) =>
+    `${isApproximate ? `${spokenGuide.offlineEstimated}. ` : ""}${spokenGuide.sensorNames[index]}. ${spokenGuide.currentReading} ${spokenReadings[index]}. ${explanation}`
+  );
+  const speechSupported = typeof window !== "undefined" && "speechSynthesis" in window;
+
+  useEffect(() => {
+    if (!voiceLanguageManuallyChanged.current) setVoiceLanguage(currentLanguage);
+  }, [currentLanguage]);
+
+  useEffect(() => {
+    if (!isApproximate) return;
+    const id = setInterval(() => {
+      setApproximateSensors((previous) => ({
+        soilMoisture: Math.round(clamp(previous.soilMoisture + (Math.random() - 0.5) * 24, 250, 900)),
+        temperature: Number(clamp(previous.temperature + (Math.random() - 0.5) * 0.4, 10, 40).toFixed(1)),
+        humidity: Number(clamp(previous.humidity + (Math.random() - 0.5) * 1.2, 25, 90).toFixed(1)),
+        distance: Number(clamp(previous.distance + (Math.random() - 0.5) * 8, 10, 150).toFixed(1)),
+      }));
+    }, 1400);
+    return () => clearInterval(id);
+  }, [isApproximate]);
+
+  useEffect(() => {
+    if (!("speechSynthesis" in window)) return;
+    const updateVoices = () => setAvailableVoices(window.speechSynthesis.getVoices());
+    updateVoices();
+    window.speechSynthesis.addEventListener("voiceschanged", updateVoices);
+    return () => window.speechSynthesis.removeEventListener("voiceschanged", updateVoices);
+  }, []);
+
+  const speak = (text: string, sensor: number | "all") => {
+    if (!speechSupported) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = locale;
+    utterance.voice = languageVoice ?? null;
+    utterance.onend = () => setSpeakingSensor(null);
+    utterance.onerror = () => setSpeakingSensor(null);
+    setSpeakingSensor(sensor);
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const stopSpeaking = () => {
+    if (speechSupported) window.speechSynthesis.cancel();
+    setSpeakingSensor(null);
+  };
+
+  useEffect(() => () => {
+    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+  }, []);
 
   // movement loop: applies whatever direction is currently held, every tick,
   // so it behaves like a live remote-control link rather than one-shot steps.
@@ -248,10 +509,8 @@ export default function RoverMonitor() {
   const setHeld = useCallback((key, val) => {
     if (val && !runningRef.current) return; // ignore drive input while stopped
     heldRef.current[key] = val;
-    const label =
-      key === "fwd" ? "Forward" : key === "rev" ? "Reverse" : key === "left" ? "Turning left" : "Turning right";
     const anyHeld = Object.values(heldRef.current).some(Boolean);
-    setActiveCmd(anyHeld ? label : null);
+    setActiveCmd(anyHeld ? key : null);
   }, []);
 
   const stopAll = useCallback(() => {
@@ -300,7 +559,12 @@ export default function RoverMonitor() {
   const trailPts = trail.map(toLocal);
   const pathStr = trailPts.map((p, i) => `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
 
-  const moistureColor = soil.moisture > 55 ? "var(--ok)" : soil.moisture > 25 ? "var(--warn)" : "var(--crit)";
+  const connectionLabel = sensorConnection === "connected"
+    ? pageCopy.live
+    : sensorConnection === "connecting" ? pageCopy.connecting : pageCopy.offline;
+  const connectionColor = sensorConnection === "connected"
+    ? "var(--ok)"
+    : sensorConnection === "connecting" ? "var(--warn)" : "var(--crit)";
 
   // field boundary in local (camera-relative) coordinates, plus live GPS
   const fieldLeft = -FIELD_HALF - cx;
@@ -323,10 +587,10 @@ export default function RoverMonitor() {
         "--crit": "#C23B33",
         background: "radial-gradient(circle at 18% -10%, #E3F3E6 0%, transparent 55%), var(--bg)",
         color: "var(--text)",
-        minHeight: "100vh",
+        minHeight: "auto",
         fontFamily: "'Inter', system-ui, sans-serif",
-        padding: 20,
-      }}
+        padding: 0,
+      } as CSSProperties}
     >
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500&display=swap');
@@ -338,31 +602,120 @@ export default function RoverMonitor() {
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <RoverBadge />
           <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-            <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 600, fontSize: 22, lineHeight: 1 }}>Rover Monitor</span>
-            <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: "var(--muted)" }}>field unit</span>
+            <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 600, fontSize: 22, lineHeight: 1 }}>{pageCopy.title}</span>
+            <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: "var(--muted)" }}>{pageCopy.subtitle}</span>
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "var(--muted)" }}>
-          <span style={{ width: 6, height: 6, borderRadius: 1, background: "var(--ok)", display: "inline-block" }} />
-          Live
+          <span style={{ width: 6, height: 6, borderRadius: 1, background: connectionColor, display: "inline-block" }} />
+          {connectionLabel}
         </div>
       </div>
 
       {/* sensors */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10, marginBottom: 10 }}>
-        <StatCard icon={Droplets} label="Soil moisture" value={soil.moisture.toFixed(0)} unit="%" accent={moistureColor} />
-        <StatCard icon={Sprout} label="Soil pH" value={soil.ph.toFixed(1)} accent="var(--ok)" />
-        <StatCard icon={Sprout} label="Conductivity" value={soil.conductivity.toFixed(2)} unit="mS/cm" accent="var(--ok)" />
-        <StatCard icon={Thermometer} label="Ambient temp" value={temp.ambient.toFixed(1)} unit="°C" accent="var(--warn)" />
-        <StatCard icon={Thermometer} label="Ground temp" value={temp.ground.toFixed(1)} unit="°C" accent="var(--warn)" />
+        <StatCard icon={Droplets} label={pageCopy.sensorLabels[0]} value={moistureReading} unit={displayedSoilMoisture === null ? "" : "ADC"} accent="var(--ok)" />
+        <StatCard icon={Thermometer} label={pageCopy.sensorLabels[1]} value={ambientReading} unit={displayedTemperature === null ? "" : "°C"} accent="var(--warn)" />
+        <StatCard icon={Droplets} label={pageCopy.sensorLabels[2]} value={humidityReading} unit={displayedHumidity === null ? "" : "%"} accent="var(--ok)" />
+        <StatCard icon={Navigation} label={pageCopy.sensorLabels[3]} value={distanceReading} unit={distanceReading === pageCopy.noReading ? "" : "cm"} accent="var(--rust)" />
       </div>
+
+      <section
+        aria-labelledby="sensor-voice-title"
+        style={{
+          background: "var(--panel)",
+          border: "1px solid var(--line)",
+          borderRadius: 3,
+          padding: "14px 16px",
+          marginBottom: 10,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 10 }}>
+          <div>
+            <h2 id="sensor-voice-title" style={{ margin: 0, fontFamily: "'Barlow Condensed', sans-serif", fontSize: 17, fontWeight: 600 }}>
+              {voiceGuide.title}
+            </h2>
+            <p style={{ margin: "3px 0 0", color: "var(--muted)", fontSize: 12 }}>{voiceGuide.description}</p>
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <label htmlFor="sensor-voice-language" style={{ color: "var(--muted)", fontSize: 10 }}>
+                {voiceGuide.voiceLanguage}
+              </label>
+              <Select
+                value={voiceLanguage}
+                onValueChange={(value) => {
+                  voiceLanguageManuallyChanged.current = true;
+                  setVoiceLanguage(value as LanguageCode);
+                }}
+              >
+                <SelectTrigger id="sensor-voice-language" aria-label={voiceGuide.voiceLanguage} className="h-8 w-[136px] text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {languages.map((language) => (
+                    <SelectItem key={language.code} value={language.code}>
+                      {language.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <button
+              type="button"
+              onClick={() => speak(sensorSpeech.join(". "), "all")}
+              disabled={!speechSupported}
+              style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 10px", border: "1px solid var(--ok)", borderRadius: 3, background: "rgba(90,196,120,0.12)", color: "var(--ok)", cursor: speechSupported ? "pointer" : "not-allowed", font: "inherit", fontSize: 12 }}
+              aria-label={voiceGuide.readAll}
+            >
+              <Volume2 size={15} />
+              {voiceGuide.readAll}
+            </button>
+            {speakingSensor !== null && (
+              <button
+                type="button"
+                onClick={stopSpeaking}
+                style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 10px", border: "1px solid var(--line)", borderRadius: 3, background: "var(--track)", color: "var(--text)", cursor: "pointer", font: "inherit", fontSize: 12 }}
+              >
+                <Square size={13} />
+                {voiceGuide.stop}
+              </button>
+            )}
+          </div>
+        </div>
+        {!speechSupported && <p role="status" style={{ margin: "0 0 8px", color: "var(--crit)", fontSize: 12 }}>{voiceGuide.unsupported}</p>}
+        {speechSupported && availableVoices.length > 0 && !languageVoice && (
+          <p role="status" style={{ margin: "0 0 8px", color: "var(--warn)", fontSize: 12 }}>{voiceGuide.voiceUnavailable}</p>
+        )}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 8 }}>
+          {voiceGuide.sensorNames.map((name, index) => (
+            <div key={name} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, borderTop: "1px solid var(--line)", paddingTop: 9 }}>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 600 }}>{name}</div>
+                <div style={{ marginTop: 3, color: "var(--muted)", fontSize: 11 }}>{sensorValues[index]}</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => speak(sensorSpeech[index], index)}
+                disabled={!speechSupported}
+                aria-label={`${voiceGuide.listen}: ${name}`}
+                title={`${voiceGuide.listen}: ${name}`}
+                style={{ display: "inline-flex", alignItems: "center", gap: 5, flexShrink: 0, padding: "7px 9px", border: "1px solid var(--line)", borderRadius: 3, background: speakingSensor === index ? "var(--track)" : "var(--panel)", color: "var(--text)", cursor: speechSupported ? "pointer" : "not-allowed", font: "inherit", fontSize: 11 }}
+              >
+                <Volume2 size={14} />
+                {voiceGuide.listen}
+              </button>
+            </div>
+          ))}
+        </div>
+      </section>
 
       {/* land visual + controls */}
       <div style={{ display: "grid", gridTemplateColumns: "2.1fr 1fr", gap: 10 }}>
         <div style={{ background: "var(--panel)", border: "1px solid var(--line)", borderRadius: 3, padding: "14px 16px" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
             <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 500, fontSize: 11, color: "var(--muted)" }}>
-              Land view — live position
+              {pageCopy.landView}
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: "var(--muted)" }}>
               <Navigation size={12} style={{ transform: `rotate(${pose.heading}deg)`, color: "var(--rust)" }} />
@@ -502,18 +855,18 @@ export default function RoverMonitor() {
             <span>
               {formatCoord(lat, "N", "S")}, {formatCoord(lng, "E", "W")}
             </span>
-            <span>{running ? activeCmd || "Holding position" : "Rover stopped"}</span>
+            <span>{running ? (activeCmd ? pageCopy.commands[activeCmd] : pageCopy.holdingPosition) : pageCopy.roverStopped}</span>
           </div>
           <div style={{ marginTop: 3, display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--muted)", fontFamily: "'IBM Plex Mono', monospace" }}>
             <span>x {pose.x.toFixed(1)}m  y {pose.y.toFixed(1)}m</span>
-            <span>plot ~2 acres</span>
+            <span>{pageCopy.plotArea}</span>
           </div>
         </div>
 
         {/* controls */}
         <div style={{ background: "var(--panel)", border: "1px solid var(--line)", borderRadius: 3, padding: "14px 16px", display: "flex", flexDirection: "column" }}>
           <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 500, fontSize: 11, color: "var(--muted)", marginBottom: 12 }}>
-            Controls — press and hold, or use arrow keys
+            {pageCopy.controls} — {pageCopy.controlsHelp}
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, flex: 1, alignContent: "start" }}>
@@ -526,7 +879,7 @@ export default function RoverMonitor() {
             <CtrlButton disabled={!running} onDown={() => setHeld("left", true)} onUp={() => setHeld("left", false)}>
               <ArrowLeft size={16} />
             </CtrlButton>
-            <StartStopButton running={running} onToggle={toggleRunning} />
+            <StartStopButton running={running} onToggle={toggleRunning} copy={pageCopy} />
             <CtrlButton disabled={!running} onDown={() => setHeld("right", true)} onUp={() => setHeld("right", false)}>
               <ArrowRight size={16} />
             </CtrlButton>
@@ -558,7 +911,7 @@ export default function RoverMonitor() {
                 display: "inline-block",
               }}
             />
-            {running ? "Rover started" : "Rover stopped"}
+            {running ? pageCopy.roverStarted : pageCopy.roverStopped}
           </div>
         </div>
       </div>
