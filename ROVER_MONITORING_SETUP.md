@@ -9,6 +9,32 @@ The Agricultural Rover Monitoring System is a comprehensive feature that allows 
 - **Autonomous patrol mode** for automatic field monitoring
 - **Manual control** to direct rovers to specific locations
 - **Route tracking** to visualize rover paths across the land
+- **Harvest readiness tracker** for farmer-confirmed ripe and unripe fruit/vegetable counts by crop
+
+The harvest readiness tracker can poll a rover-mounted camera snapshot endpoint, capture a field frame for model
+analysis, and record farmer-reviewed crop/ripeness counts. Its optional TensorFlow model is trained and served
+separately; dataset format, public mango/banana dataset download, model training, and API setup are documented in
+[ml/ripeness/README.md](./ml/ripeness/README.md). The model predicts one crop and ripeness label per image; it does not
+detect or count every item in a field frame. Confirmed counts are stored in the current browser and are not shared
+across devices.
+
+### Rover-mounted Camera Feed
+
+The rover must expose an HTTP or HTTPS URL that returns a single JPEG (or other image) when requested. On the Rover
+Monitoring page, enter that URL under **Rover field camera** and select **Connect rover camera**. The dashboard
+requests a fresh image every 2 seconds; select **Use latest rover frame** to review it, then **Analyze with trained
+model** to get a crop/ripeness suggestion. Confirm the result and enter the number of produce items yourself before
+saving a harvest observation.
+
+The endpoint must be reachable from the browser and allow cross-origin requests from the dashboard (CORS). For
+example, a rover camera server on the local network could expose
+`http://192.168.4.1/capture` and return `Content-Type: image/jpeg`. HTTPS deployments should use an HTTPS camera
+endpoint to avoid browser mixed-content restrictions. The existing rover sensor WebSocket does not transmit images.
+If the hardware currently exposes only a video stream or a different protocol, it needs a small rover-side snapshot
+endpoint/bridge; a stream URL cannot be used as the JPEG snapshot URL directly.
+
+For a dashboard preview, select **Load sample data** in **Field totals by crop**. These example counts are labeled as
+demo data and can be removed without deleting farmer-confirmed observations.
 
 ## Installation & Setup
 
